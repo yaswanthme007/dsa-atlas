@@ -1,0 +1,41 @@
+name: Daily Commit
+
+on:
+  schedule:
+    # Runs every day at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  daily-update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Append to daily log
+        run: |
+          mkdir -p logs
+          DATE=$(date -u +"%Y-%m-%d")
+          TIME=$(date -u +"%H:%M:%S UTC")
+          echo "" >> logs/daily-log.md
+          echo "## $DATE" >> logs/daily-log.md
+          echo "**Time:** $TIME" >> logs/daily-log.md
+          echo "Daily automation executed successfully." >> logs/daily-log.md
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add logs/daily-log.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit. Exiting successfully."
+            exit 0
+          fi
+          DATE=$(date -u +"%Y-%m-%d")
+          git commit -m "chore: daily update $DATE"
+          git push origin main
